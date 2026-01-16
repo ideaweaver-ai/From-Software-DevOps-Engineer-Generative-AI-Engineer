@@ -1,0 +1,6 @@
+# Text Generator Application Dependencies
+# This application uses Qwen2.5-0.5B-Instruct for text generation
+streamlit
+transformers>=4.37.0
+torch>=2.3.0
+sentencepiece
