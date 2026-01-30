@@ -43,8 +43,11 @@ def get_cpu_utilization() -> str:
 @tool
 def get_memory_usage() -> str:
     """
-    Get current memory usage statistics from the Linux system.
-    Returns total, used, free memory and swap information.
+    Get current memory behavior statistics from the Linux system.
+    This function focuses on memory pressure signals rather than swap usage,
+    which is typically disabled in containerized environments.
+    It captures runtime indicators such as runnable processes, free memory,
+    and CPU wait time to help detect memory-related performance issues.
     """
     try:
         # Using 'free' command to get memory stats
