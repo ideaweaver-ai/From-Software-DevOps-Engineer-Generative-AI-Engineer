@@ -49,7 +49,7 @@ def get_memory_usage() -> str:
     try:
         # Using 'free' command to get memory stats
         result = subprocess.run(
-            ['free', '-h'],
+            ['vmstat', '1', '2'],
             capture_output=True,
             text=True,
             timeout=10
@@ -86,7 +86,8 @@ def get_disk_io() -> str:
         else:
             # Fallback to reading /proc/diskstats
             with open('/proc/diskstats', 'r') as f:
-                diskstats = f.read()
+                lines = [l for l in f.readlines() if "loop" not in l][:25]
+                diskstats = "".join(lines)
             return f"Disk I/O Statistics (from /proc/diskstats):\n{diskstats}"
             
     except Exception as e:
