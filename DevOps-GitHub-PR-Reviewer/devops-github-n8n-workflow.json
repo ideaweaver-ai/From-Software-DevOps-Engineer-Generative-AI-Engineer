@@ -1,0 +1,221 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "owner": {
+          "__rl": true,
+          "value": "ideaweaver-ai",
+          "mode": "list",
+          "cachedResultName": "ideaweaver-ai",
+          "cachedResultUrl": "https://github.com/ideaweaver-ai"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "devops-testing",
+          "mode": "list",
+          "cachedResultName": "devops-testing",
+          "cachedResultUrl": "https://github.com/ideaweaver-ai/devops-testing"
+        },
+        "events": [
+          "pull_request"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.githubTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fb3f08ff-8ffb-4996-8146-2b7bc00d5ac3",
+      "name": "Github Trigger",
+      "webhookId": "6166d005-1262-4496-a104-b356eb25a550",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "l6UFg2BRNPkoD9y4",
+          "name": "GitHub account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $json.body.sender.login }}/{{ $json.body.repository.name }}/pulls/{{ $json.body.number }}/files",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "82528bc6-45e3-4c08-a1af-922aa30d5bea",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "def build_devops_pr_review_prompt(pr_files):\n    diffs = \"\"\n\n    for f in pr_files:\n        filename = f.get(\"filename\", \"unknown-file\")\n        patch = f.get(\"patch\")\n\n        diffs += f\"### File: {filename}\\n\\n\"\n\n        if patch:\n            safe_patch = patch.replace(\"```\", \"'''\")\n            diffs += \"```diff\\n\" + safe_patch + \"\\n```\\n\"\n        else:\n            diffs += \"No patch available (likely a binary or large file).\\n\"\n\n        diffs += \"\\n---\\n\\n\"\n\n    user_message = f\"\"\"\nYou are a senior DevOps engineer with deep experience in CI/CD, IaC, Kubernetes, cloud, and security.\n\nPlease review the following code changes in these files:\n\n{diffs}\n\nYour mission:\n- Review the proposed changes file by file.\n- Focus on DevOps best practices, reliability, security, and scalability.\n- Identify potential issues in CI/CD, IaC, containerization, or cloud configs.\n- Suggest concrete improvements where applicable.\n- Ignore files without meaningful patches.\n\"\"\"\n    return user_message.strip()\n\n\n# n8n Python (Native): read input items\n# Each incoming item looks like: {\"json\": {...}}\nfiles = []\nfor it in _items:\n    j = it.get(\"json\", {})\n    # Your HTTP node might return either the file object directly,\n    # or wrap it under some key. This handles both.\n    if isinstance(j, dict) and \"filename\" in j:\n        files.append(j)\n    elif isinstance(j, dict) and \"body\" in j and isinstance(j[\"body\"], list):\n        files.extend(j[\"body\"])\n\nprompt = build_devops_pr_review_prompt(files)\n\n# n8n expects a list of output items\nreturn [{\"json\": {\"prompt\": prompt}}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "a8c51a6e-d06b-4891-a2c3-0cc3c39b384c",
+      "name": "Code in Python (Native)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        672,
+        0
+      ],
+      "id": "6b5aeeb1-42e2-44f6-b499-da79fb364da1",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        744,
+        224
+      ],
+      "id": "7e293e98-ab15-4b9c-ae53-d5078ec5ae96",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "T1XYBMlTF2VvJihk",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "review",
+        "owner": {
+          "__rl": true,
+          "value": "ideaweaver-ai",
+          "mode": "list",
+          "cachedResultName": "ideaweaver-ai",
+          "cachedResultUrl": "https://github.com/ideaweaver-ai"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "devops-testing",
+          "mode": "list",
+          "cachedResultName": "devops-testing",
+          "cachedResultUrl": "https://github.com/ideaweaver-ai/devops-testing"
+        },
+        "pullRequestNumber": "={{ $('Github Trigger').item.json.body.number }}",
+        "event": "comment",
+        "body": "={{ $json.output }}",
+        "additionalFields": {
+          "commitId": ""
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "74923da5-e828-425e-af07-19c317756e1b",
+      "name": "Create a review",
+      "webhookId": "fe8defc2-2ac9-4482-a76a-d037678e5cd1",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "l6UFg2BRNPkoD9y4",
+          "name": "GitHub account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Github Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in Python (Native)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in Python (Native)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create a review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "75af35b9-798a-4de4-8dad-39e7baa95bad",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "097758a22ccd2fe384b3c3709d6893a7fefe1d0554c05ec02c98ad41057ef058"
+  },
+  "id": "OiAPU7tl7J1IKh8h",
+  "tags": []
+}
