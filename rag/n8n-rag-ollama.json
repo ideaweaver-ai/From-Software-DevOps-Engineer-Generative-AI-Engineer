@@ -1,0 +1,376 @@
+{
+  "name": "RAG Demo with Ollama (Local LLM)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        128,
+        528
+      ],
+      "id": "ec4db75e-ecc5-4231-abd3-f596d15b1e6b",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1VGOJIM_ERLOJxoPhig4NQfjjVfbuQefE",
+          "mode": "list",
+          "cachedResultName": "ideaweaver_policy_doc.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1VGOJIM_ERLOJxoPhig4NQfjjVfbuQefE/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        368,
+        528
+      ],
+      "id": "a58923b1-3a41-42c1-aa5a-96afd3a6dfde",
+      "name": "Download PDF from Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "MGONbTIwG5rnvr91",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        416
+      ],
+      "id": "eba3696f-2db9-4110-9ff6-13dfa48ae43c",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "W0uz1G6nBFnwLiSW",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        848,
+        640
+      ],
+      "id": "cd703a48-2257-4356-b63d-c75bb46167bd",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        608,
+        640
+      ],
+      "id": "b4119f25-eced-440b-8438-4c147981826a",
+      "name": "Ollama Embeddings",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JuK5DKFQFGm5tM0k",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        848,
+        768
+      ],
+      "id": "ea26d9a9-83c6-4fce-8490-671dbcb56617",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "content": "## 1. Document Ingestion Pipeline\n\n**Purpose:** Load documents and store embeddings in Supabase vector database\n\n**Steps:**\n1. Click 'Execute workflow' to start\n2. Downloads PDF from Google Drive\n3. Splits document into chunks\n4. Creates embeddings using Ollama (nomic-embed-text)\n5. Stores in Supabase vector database\n\n**Setup Required:**\n- Configure Google Drive credentials\n- Configure Supabase credentials\n- Pull embedding model: `ollama pull nomic-embed-text`\n- Create 'documents' table in Supabase with pgvector",
+        "height": 340,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        160
+      ],
+      "id": "a301eda2-f773-4573-acf1-b5058b030107",
+      "name": "Sticky Note - Ingestion"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Chat & Retrieval Pipeline\n\n**Purpose:** Answer questions using RAG with local Ollama model\n\n**Steps:**\n1. User sends message via chat\n2. Query is embedded using Ollama\n3. Similar documents retrieved from Supabase\n4. Context + query sent to Ollama LLM\n5. Response returned to user\n\n**Setup Required:**\n- Pull chat model: `ollama pull gpt-oss:20b` (or llama3.2)\n- Pull embedding model: `ollama pull nomic-embed-text`\n- Ensure Ollama is running: `ollama serve`",
+        "height": 320,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        816
+      ],
+      "id": "12b5e004-b78e-4541-bae0-95cfe23ed2c1",
+      "name": "Sticky Note - Retrieval"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        1120
+      ],
+      "id": "5e6a3ff9-4cd2-459a-a150-3556dcd54bd3",
+      "name": "When chat message received",
+      "webhookId": "ollama-rag-chat"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        176,
+        1120
+      ],
+      "id": "7116a592-d387-430a-84f5-e2351ffd70f1",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        16,
+        1344
+      ],
+      "id": "d756a1fc-b2ae-4e74-9621-2d1dd4affa46",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JuK5DKFQFGm5tM0k",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to search the knowledge base and answer questions about company documents, policies, and information that has been ingested.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        1120
+      ],
+      "id": "d68e9608-67ca-45c7-80e6-d34506e846dd",
+      "name": "Supabase Vector Store (Retrieve)",
+      "credentials": {
+        "supabaseApi": {
+          "id": "W0uz1G6nBFnwLiSW",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        528,
+        1344
+      ],
+      "id": "9c6bcbd8-8b61-4c09-aa5a-9b33152f7286",
+      "name": "Ollama Embeddings (Retrieve)",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JuK5DKFQFGm5tM0k",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Supabase Setup\n\nRun this SQL in Supabase SQL Editor:\n\n```sql\n-- Enable pgvector extension\ncreate extension if not exists vector;\n\n-- Create documents table\ncreate table if not exists documents (\n  id bigserial primary key,\n  content text,\n  metadata jsonb,\n  embedding vector(768)\n);\n\n-- Create similarity search function\ncreate or replace function match_documents (\n  query_embedding vector(768),\n  match_count int default 5,\n  filter jsonb default '{}'\n) returns table (\n  id bigint,\n  content text,\n  metadata jsonb,\n  similarity float\n)\nlanguage plpgsql\nas $$\nbegin\n  return query\n  select\n    documents.id,\n    documents.content,\n    documents.metadata,\n    1 - (documents.embedding <=> query_embedding) as similarity\n  from documents\n  where metadata @> filter\n  order by documents.embedding <=> query_embedding\n  limit match_count;\nend;\n$$;\n\n-- Create index for faster searches\ncreate index on documents \nusing ivfflat (embedding vector_cosine_ops)\nwith (lists = 100);\n```",
+        "height": 620,
+        "width": 460
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        176
+      ],
+      "id": "e454961c-1341-4a2f-a038-337df49164dd",
+      "name": "Sticky Note - Supabase Setup"
+    },
+    {
+      "parameters": {
+        "content": "## Ollama Setup\n\n```bash\n# Install Ollama (if not installed)\ncurl -fsSL https://ollama.com/install.sh | sh\n\n# Pull required models\nollama pull nomic-embed-text  # For embeddings (768 dimensions)\nollama pull gpt-oss:20b       # Your chat model (or use llama3.2)\n\n# Verify Ollama is running\nollama ps\n\n# Test embeddings\ncurl http://localhost:11434/api/embeddings -d '{\n  \"model\": \"nomic-embed-text\",\n  \"prompt\": \"Hello World\"\n}'\n```\n\n## n8n Ollama Credentials\n\nIn n8n, create Ollama credentials:\n- **Base URL:** `http://localhost:11434`\n- No API key needed for local Ollama",
+        "height": 668,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        960
+      ],
+      "id": "61c9f115-704c-4e8d-bddb-0457561721d8",
+      "name": "Sticky Note - Ollama Setup"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Download PDF from Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download PDF from Drive": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store (Retrieve)": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Embeddings (Retrieve)": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store (Retrieve)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "45751376-cca9-458c-9214-16e6b98fbe77",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fd67a5aa59768b4f7581ff60d80215a35aecb2ae742c5b0022a6d5972480ef79"
+  },
+  "id": "g7pwwIlNE6lkBbi0rZpxN",
+  "tags": []
+}
