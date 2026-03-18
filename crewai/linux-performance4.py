@@ -1,14 +1,11 @@
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import tool
-from dotenv import load_dotenv
 import os
 import subprocess
 
-load_dotenv()
-
-for var in ("OPENAI_API_KEY", "OPENAI_BASE_URL"):
-    if var not in os.environ:
-        raise EnvironmentError(f"Missing required environment variable: {var}")
+# Ensure your OpenAI environment variables are set
+openai_api_key = os.environ["OPENAI_API_KEY"]
+openai_base_url = os.environ["OPENAI_BASE_URL"]
 
 
 @tool
