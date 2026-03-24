@@ -1,0 +1,21 @@
+# Copy this file to terraform.tfvars and fill in your values
+# cp terraform.tfvars.example terraform.tfvars
+
+aws_region             = "us-east-1"
+knowledge_base_name    = "hr-qa-knowledge-base"
+s3_bucket_name         = "my-company-hr-qa-docs-CHANGE-ME"
+embedding_model_id     = "amazon.titan-embed-text-v2:0"
+embedding_dimension    = 1024
+chunking_strategy      = "FIXED_SIZE"
+chunk_max_tokens       = 300
+chunk_overlap_percentage = 20
+
+# Lambda & LLM
+llm_model_id           = "anthropic.claude-3-haiku-20240307-v1:0"
+kb_max_results         = 5
+lambda_timeout         = 60
+lambda_memory_size     = 256
+
+# API Gateway
+create_api_gateway     = true
+api_stage_name         = "v1"
