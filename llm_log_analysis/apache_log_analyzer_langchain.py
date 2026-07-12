@@ -57,7 +57,7 @@ def parse_logs(log_file_path: str) -> list[str]:
 # {errors_text} gets filled in when you call .invoke(...)
 # ------------------------------------------------------------
 
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatOpenAI(model="gpt-5.4-mini", temperature=0)
 
 analysis_prompt = ChatPromptTemplate.from_messages([
     (
