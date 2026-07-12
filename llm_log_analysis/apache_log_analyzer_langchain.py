@@ -5,7 +5,6 @@
 # and sends them to GPT for analysis.
 #
 # Workflow: parse logs -> analyze errors -> print result
-# (Same logic as LangGraph, but written as plain Python)
 # ============================================================
 
 import os
